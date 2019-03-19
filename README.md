@@ -32,4 +32,4 @@ Run `npm i` to install npm dependencies.
 3. Create **'output'** folder inside the root directory.
 
 ## Execution
-Run `node converter.js` to execute program.
+Run `node converter.js` to execute programme.
