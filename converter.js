@@ -1,35 +1,17 @@
 var fs = require('fs');
+
 var DOMParser = require('xmldom').DOMParser;
 var parser = new DOMParser();
+var DOMImplementation = require('xmldom').DOMImplementation;
+var domImpl = new DOMImplementation();
+var XMLSerializer = require('xmldom').XMLSerializer;
+var serializer = new XMLSerializer();
 var JSON = require('circular-json');
 
-var parseNode = function(node) {
-  var nodeObj;
-  if (node.nodeType === 3) {
-    nodeObj = {
-      text: node.textContent
-    };
-  } else {
-    nodeObj = {
-      tagName: node.tagName,
-      attributes: []
-    };
-    if (node.attributes && node.attributes.length > 0) {
-      for (var i = 0; i < node.attributes.length; i++) {
-        nodeObj.attributes.push({ name: node.attributes[i].name, value: node.attributes[i].value });
-      }
-    }
-    if (!node.childNodes || node.childNodes.length < 1) {
-      nodeObj.text = node.textContent;
-    } else {
-      nodeObj.childNodes = [];
-      for (var n = 0; n < node.childNodes.length; n++) {
-        nodeObj.childNodes.push(parseNode(node.childNodes[n]));
-      };
-    }
-  }
-  return nodeObj;
-}
+var TextService = require('./textService');
+const textService = new TextService();
+var ModelService = require('./modelService');
+const modelService = new ModelService();
 
 
 var convertFile = function(file) {
@@ -37,8 +19,12 @@ var convertFile = function(file) {
     if (err) { throw err }
     if (data) {
       var dom = parser.parseFromString(data, 'text/xml');
-      var text = dom.getElementsByTagName('text')[0];
-      var json = parseNode(text);
+      var tei = dom.getElementsByTagName('TEI')[0];
+      var model = modelService.createJSON(tei);
+      var htmlDoc = domImpl.createDocument('http://www.w3.org/1999/xhtml', 'html', null);
+      var text = textService.createHTML(tei, htmlDoc);
+      text = serializer.serializeToString(text);
+      var json = {model, text}
       var jsonString = JSON.stringify(json);
       var fileName = file.replace('.xml', '.json');
       fs.writeFile('./output/' + fileName, jsonString, function(err) {
